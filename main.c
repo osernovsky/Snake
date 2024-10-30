@@ -1,4 +1,4 @@
-#include <ncurses.h>    // Для управления терминалом
+#include <ncurses.h>   // Для управления терминалом
 #include <stdlib.h>     // Для функций rand() и srand()
 #include <unistd.h>     // Для функции usleep()
 #include <time.h>       // Для инициализации генератора случайных чисел
@@ -6,20 +6,20 @@
 #define WIDTH 40        // Ширина игрового поля
 #define HEIGHT 20       // Высота игрового поля
 
-typedef struct {
+struct Point {
     int x, y;  // Координаты точки на поле
-} Point;
+};
 
-typedef struct {
-    Point *body;    // Массив точек, представляющий тело змеи
-    int length;     // Текущая длина змеи
-    int dx, dy;     // Направление движения змеи
-} Snake;
+struct Snake {
+    struct Point *body;  // Массив точек, представляющий тело змеи
+    int length;          // Текущая длина змеи
+    int dx, dy;          // Направление движения змеи
+};
 
-void init_game(Snake *snake, Point *food);
-void draw(Snake *snake, Point *food);
-void update(Snake *snake, Point *food, int *game_over);
-void handle_input(Snake *snake);
+void init_game(struct Snake *snake, struct Point *food);
+void draw(struct Snake *snake, struct Point *food);
+void update(struct Snake *snake, struct Point *food, int *game_over);
+void handle_input(struct Snake *snake);
 
 int main() {
     // Инициализация ncurses
@@ -29,8 +29,8 @@ int main() {
     keypad(stdscr, TRUE);  // Включить поддержку клавиш-стрелок
     timeout(100);     // Установить таймаут ввода (100 мс)
 
-    Snake snake;
-    Point food;
+    struct Snake snake;
+    struct Point food;
     int game_over = 0;
 
     init_game(&snake, &food);
@@ -48,12 +48,12 @@ int main() {
 }
 
 // Функция инициализации игры
-void init_game(Snake *snake, Point *food) {
+void init_game(struct Snake *snake, struct Point *food) {
     snake->length = 3;
-    snake->body = malloc(snake->length * sizeof(Point));
-    snake->body[0] = (Point){WIDTH / 2, HEIGHT / 2};
-    snake->body[1] = (Point){WIDTH / 2 - 1, HEIGHT / 2};
-    snake->body[2] = (Point){WIDTH / 2 - 2, HEIGHT / 2};
+    snake->body = malloc(snake->length * sizeof(struct Point));
+    snake->body[0] = (struct Point){WIDTH / 2, HEIGHT / 2};
+    snake->body[1] = (struct Point){WIDTH / 2 - 1, HEIGHT / 2};
+    snake->body[2] = (struct Point){WIDTH / 2 - 2, HEIGHT / 2};
     snake->dx = 1;
     snake->dy = 0;
 
@@ -63,7 +63,7 @@ void init_game(Snake *snake, Point *food) {
 }
 
 // Функция отрисовки игрового поля и объектов
-void draw(Snake *snake, Point *food) {
+void draw(struct Snake *snake, struct Point *food) {
     clear();
     // Отрисовка границ
     for (int i = 0; i < WIDTH + 2; i++) {
@@ -87,7 +87,7 @@ void draw(Snake *snake, Point *food) {
 }
 
 // Функция обработки ввода с клавиатуры
-void handle_input(Snake *snake) {
+void handle_input(struct Snake *snake) {
     int ch = getch();
     switch (ch) {
         case KEY_UP:
@@ -106,7 +106,7 @@ void handle_input(Snake *snake) {
 }
 
 // Функция обновления состояния игры
-void update(Snake *snake, Point *food, int *game_over) {
+void update(struct Snake *snake, struct Point *food, int *game_over) {
     // Перемещение тела змеи
     for (int i = snake->length - 1; i > 0; i--) {
         snake->body[i] = snake->body[i - 1];
@@ -131,7 +131,7 @@ void update(Snake *snake, Point *food, int *game_over) {
     // Проверка на съедание еды
     if (snake->body[0].x == food->x && snake->body[0].y == food->y) {
         snake->length++;
-        snake->body = realloc(snake->body, snake->length * sizeof(Point));
+        snake->body = realloc(snake->body, snake->length * sizeof(struct Point));
         food->x = rand() % WIDTH;
         food->y = rand() % HEIGHT;
     }

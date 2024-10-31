@@ -3,7 +3,7 @@
 // #include <unistd.h>
 // #include <time.h>
 
-#define WIDTH 40 // Задаем размеры игрового поля
+#define WIDTH 40 // Задаем размеры игрового поля, без учета рамки
 #define HEIGHT 40
 #define NUM_FOODS 5 // Количество яблок на поле
 
@@ -27,7 +27,7 @@ struct Food {
 void start_game (struct Snake *snake, struct Food *food){
 
     snake->length = 3; // начальная длина змеи
-    snake->body = malloc(snake->length * sizeof (struct Point)); // выделяем память
+    snake->body = malloc(snake->length * sizeof (struct Point)); // выделяем память змее
     snake->body[0] = (struct Point) {WIDTH / 2, HEIGHT / 2}; // задаем начальную позицию
     snake->body[1] = (struct Point) {WIDTH / 2 - 1, HEIGHT / 2};
     snake->body[2] = (struct Point) {WIDTH / 2 - 2, HEIGHT / 2};
@@ -35,24 +35,27 @@ void start_game (struct Snake *snake, struct Food *food){
     snake->dy = 0;
 
     srand(time(NULL)); // рассыпаем начальные яблоки
-//    int foodx, foody;
-    bool food_collision = FALSE;
-
+    food->foods = calloc(NUM_FOODS * sizeof (struct Point)); // выделяем память яблокам
+    
     for(int i = 0; i < NUM_FOODS; i++){
         do{
             food->foods[i].x = rand() % WIDTH;
             food->foods[i].y = rand() % HEIGHT;
-
-            // проверяем коллизии со змеёй
-            for(int j = 0; j < snake->length; j++){
-                
-            }
-            // проверяем коллизии с остальными яблоками
-
-        } while (food_collision);
-        food_collision = FALSE;
+        } while (food_collision(snake, food, i));
     }
 
+}
+
+// Функция поиска коллизий при генерации яблок
+
+bool food_collision (struct Snake *snake, struct Food *food, int num_food){
+    for(int j = 0; j < snake->length; j++) {
+        if (food->foods.x[num_food] == snake->body.x[j] && food->foods.y[num_food] == snake->body.y[j]) return TRUE;
+    }
+    for (int i = 0; i < NUM_FOODS; i++) {
+        if (food->foods.x[num_food] == food->foods.x[i] && food->foods.y[num_food] == food->foods.y[i] && i != num_food) return TRUE;
+    }
+return FALSE;
 }
 
 int main (void){

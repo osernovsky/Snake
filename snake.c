@@ -159,16 +159,24 @@ int move_snake (struct Snake *snake, struct Food *food){
         printf("\033[%d;1H Apple number:%d ", HEIGHT + 3, i);
 
         snake->length++;
-//        snake->body = realloc(snake->body, snake->length * sizeof(struct Point));
 
-        for( int j = snake->length; j > 0; j --){
+    struct Point *new_body = realloc(snake->body, snake->length * sizeof(struct Point));
+    if (new_body == NULL) {
+        // Ошибка выделения памяти
+        free(snake->body); // Освобождаем старую память, чтобы избежать утечек
+        return 1;         // Указываем, что произошла ошибка
+    }
+    snake->body = new_body;
+        
+        for( int j = snake->length - 1; j > 0; j --){
             snake->body[j] = snake->body[j-1];
         }
         snake->body[0].x = x;
         snake->body[0].y = y;
+        
         print_snake(snake);
         
-        return 0;
+        return 0; // Успешное выполнение
     }
 }
 

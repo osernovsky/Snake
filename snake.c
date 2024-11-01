@@ -232,7 +232,7 @@ int move_snake (struct Snake *snake, struct Food *food){
 }
 
 
-int main (void){
+int main (void){ // 1.0.0
 
     struct Snake snake;
     struct Food food;

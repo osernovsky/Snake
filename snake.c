@@ -2,10 +2,15 @@
 #include <stdlib.h> // Вызов функций рандомайзера
 #include <time.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <termios.h>
+#include <fcntl.h>
 
 #define WIDTH 60 // Задаем размеры игрового поля, без учета рамки
 #define HEIGHT 15
-#define NUM_FOODS 100 // Количество яблок на поле
+#define NUM_FOODS 20 // Количество яблок на поле
+
+int score = 0;
 
 struct Point { // Структура координат точки (тело змеи, яблоки, препятствия)
     int x, y;
@@ -25,6 +30,43 @@ struct Food {
 // Объявляю функции
 bool food_collision(struct Snake *snake, struct Food *food, int num_food);
 
+// Настройка терминала в неблокирующий режим
+void enable_nonblocking() {
+    struct termios settings;
+    tcgetattr(STDIN_FILENO, &settings);
+    settings.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &settings);
+    fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
+}
+
+// Восстановление нормального режима терминала
+void disable_nonblocking() {
+    struct termios settings;
+    tcgetattr(STDIN_FILENO, &settings);
+    settings.c_lflag |= (ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &settings);
+}
+
+int get_key_press(struct Snake *snake) {
+    char ch = getchar();
+
+    // Проверяем, является ли нажатая клавиша ESC (код 27)
+    if (ch == 27) { // Если ESC, читаем следующий символ
+        char next = getchar(); // Читаем символ после ESC
+        if (next == '[') { // Проверяем на последовательность
+            next = getchar(); // Читаем третий символ
+            switch (next) {
+                case 'A': if (snake->dy == 0){snake->dx = 0; snake->dy = -1; return 1;} // Вверх
+                case 'B': if (snake->dy == 0){snake->dx = 0; snake->dy = 1; return 1;} // Вниз
+                case 'C': if (snake->dx == 0){snake->dy = 0; snake->dx = 1; return 1;} // Вправо
+                case 'D': if (snake->dx == 0){snake->dy = 0; snake->dx = -1; return 1;} // Влево
+            }
+        }
+        return -1; // Возвращаем -1, если нажата только клавиша ESC
+    }
+
+    return 0; // Возвращаем 0, если никакая клавиша не была нажата
+}
 
 void print_table(void){
 
@@ -78,7 +120,8 @@ void start_game (struct Snake *snake, struct Food *food){
 
     snake->length = 3; // начальная длина змеи
 //    snake->body = malloc(snake->length * sizeof (struct Point)); // выделяем память змее
-    snake->body = malloc(50 * sizeof (struct Point)); // выделяем память змее
+    snake->body = malloc(200 * sizeof (struct Point)); // выделяем память змее
+//    snake->body = realloc(snake->body, snake->length * sizeof(struct Point));
     snake->body[0] = (struct Point) {WIDTH / 2, HEIGHT / 2 + 1}; // задаем начальную позицию
     snake->body[1] = (struct Point) {WIDTH / 2 - 1, HEIGHT / 2 + 1};
     snake->body[2] = (struct Point) {WIDTH / 2 - 2, HEIGHT / 2 + 1};
@@ -132,6 +175,11 @@ int snake_collision (struct Snake *snake, struct Food *food, int x, int y){
 
 int move_snake (struct Snake *snake, struct Food *food){
 
+    int key;
+
+    key = get_key_press(snake);
+    if (key == -1) return 1;
+
     int x, y;
     x = snake->body[0].x + snake->dx;
     y = snake->body[0].y + snake->dy;
@@ -159,46 +207,47 @@ int move_snake (struct Snake *snake, struct Food *food){
         printf("\033[%d;1H Apple number:%d ", HEIGHT + 3, i);
 
         snake->length++;
+        score += 10;
+        printf("\033[1;3H Score: %d ", score);
+        printf("\a");
 
-    struct Point *new_body = realloc(snake->body, snake->length * sizeof(struct Point));
-    if (new_body == NULL) {
-        // Ошибка выделения памяти
-        free(snake->body); // Освобождаем старую память, чтобы избежать утечек
-        return 1;         // Указываем, что произошла ошибка
-    }
-    snake->body = new_body;
-        
-        for( int j = snake->length - 1; j > 0; j --){
+        for( int j = snake->length -1; j > 0; j --){
             snake->body[j] = snake->body[j-1];
         }
         snake->body[0].x = x;
         snake->body[0].y = y;
-        
         print_snake(snake);
-        
-        return 0; // Успешное выполнение
+
+        do{
+            food->foods[i-1].x = (rand() % WIDTH) + 1;
+            food->foods[i-1].y = (rand() % HEIGHT) + 1;
+        } while (food_collision(snake, food, i));
+
+        printf("\033[92m"); // зеленый цвет яблок
+        placeCharAt(food->foods[i-1].x + 1, food->foods[i-1].y + 1, '@');
+        printf("\033[0m"); // возвращаю цвет
+
+        return 0;
     }
 }
 
 
-int main (void){
+int main (void){ // 1.0.0
 
     struct Snake snake;
     struct Food food;
 
-    // Инициализация ncurses
-//    initscr();
-//    noecho();         // Не отображать вводимые символы
-//    curs_set(0);      // Отключить курсор
-//    keypad(stdscr, TRUE);  // Включить поддержку клавиш-стрелок
+    enable_nonblocking();
 
     start_game(&snake, &food);
 
     while (move_snake(&snake, &food) == 0){
-        usleep(200000);
+        usleep(100000);
+
     }
     printf("\033[%d;1H Game over", HEIGHT + 4);
     
     free(snake.body);
+    disable_nonblocking();
     return 0;
 }

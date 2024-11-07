@@ -56,10 +56,10 @@ int get_key_press(struct Snake *snake) {
         if (next == '[') { // Проверяем на последовательность
             next = getchar(); // Читаем третий символ
             switch (next) {
-                case 'A': if (snake->dy == 0){snake->dx = 0; snake->dy = -1; return 1;} // Вверх
-                case 'B': if (snake->dy == 0){snake->dx = 0; snake->dy = 1; return 1;} // Вниз
-                case 'C': if (snake->dx == 0){snake->dy = 0; snake->dx = 1; return 1;} // Вправо
-                case 'D': if (snake->dx == 0){snake->dy = 0; snake->dx = -1; return 1;} // Влево
+                case 'A': if (snake->dy == 0) {snake->dx = 0; snake->dy = -1; return 1;} else return 0; // Вверх
+                case 'B': if (snake->dy == 0) {snake->dx = 0; snake->dy = 1; return 1;} else return 0; // Вниз
+                case 'C': if (snake->dx == 0) {snake->dy = 0; snake->dx = 1; return 1;} else return 0; // Вправо
+                case 'D': if (snake->dx == 0) {snake->dy = 0; snake->dx = -1; return 1;} else return 0; // Влево
             }
         }
         return -1; // Возвращаем -1, если нажата только клавиша ESC
